@@ -52,10 +52,10 @@ func main() {
 	cmdManager.register("reset", handlerReset)
 	cmdManager.register("users", handlerUsers)
 	cmdManager.register("agg", handlerAgg)
-	cmdManager.register("addfeed", handlerAddFeed)
+	cmdManager.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	cmdManager.register("feeds", handlerFeeds)
-	cmdManager.register("follow", handlerFollow)
-	cmdManager.register("following", handlerFollowing)
+	cmdManager.register("follow", middlewareLoggedIn(handlerFollow))
+	cmdManager.register("following", middlewareLoggedIn(handlerFollowing))
 
 	// Register other commands here later
 
