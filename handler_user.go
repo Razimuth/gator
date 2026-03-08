@@ -90,19 +90,39 @@ func handlerUsers(s *state, cmd command) error {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	url := "https://www.wagslane.dev/index.xml"
-	feed, err := fetchFeed(context.Background(), url)
-	if err != nil {
-		return fmt.Errorf("Error: %w", err)
-	}
-	// Print the entire feed struct
-	fmt.Printf("%+v\n", feed)
 
-	// Print in a readable format
-	//	fmt.Printf("Channel: %s\nDescription: %s\nItems:\n", feed.Channel.Title, feed.Channel.Description)
-	//	for _, item := range feed.Channel.Item {
-	//		fmt.Printf("- %s\n", item.Title)
-	//		fmt.Printf("Description: %s\n", item.Description)
+	//	url := "https://www.wagslane.dev/index.xml"
+	//	feed, err := fetchFeed(context.Background(), url)
+	//	if err != nil {
+	//		return fmt.Errorf("Error: %w", err)
 	//	}
-	return nil
+	// Print the entire feed struct
+	//	fmt.Printf("%+v\n", feed)
+
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("need <time_between_reqs>, 1m (Runs every minute).suggest > 1m")
+	}
+
+	timeBetweenRequests, err := time.ParseDuration(cmd.Args[0])
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Collecting feeds every %s\n", timeBetweenRequests)
+	ticker := time.NewTicker(timeBetweenRequests)
+	defer ticker.Stop()
+
+	// Run immediately, then on tick
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
 }
+
+// Print in a readable format
+//	fmt.Printf("Channel: %s\nDescription: %s\nItems:\n", feed.Channel.Title, feed.Channel.Description)
+//	for _, item := range feed.Channel.Item {
+//		fmt.Printf("- %s\n", item.Title)
+//		fmt.Printf("Description: %s\n", item.Description)
+//	}
+//	return nil
+//}

@@ -14,7 +14,7 @@ func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) 
 	return func(s *state, cmd command) error {
 		user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
 		if err != nil {
-			return err
+			return fmt.Errorf("Error getting current user: %w", err)
 		}
 		return handler(s, cmd, user)
 	}
@@ -78,7 +78,7 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 	feedUrl := cmd.Args[0]
 	feed, err := s.db.GetFeedByUrl(context.Background(), feedUrl)
 	if err != nil {
-		return fmt.Errorf("Error getting feed by URL: %w", err)
+		return fmt.Errorf("Error getting feed by Url: %w", err)
 	}
 	// use CreateFeedFollow to create a feedFollow record
 	feedFollow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
@@ -104,5 +104,29 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 	for _, follow := range follows {
 		fmt.Printf("* %s\n", follow.FeedName)
 	}
+	return nil
+}
+
+func handlerUnFollow(s *state, cmd command, user database.User) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("a URL is required to unfollow a feed")
+	}
+	feedUrl := cmd.Args[0]
+	feed, err := s.db.GetFeedByUrl(context.Background(), feedUrl)
+	if err != nil {
+		return fmt.Errorf("Error getting feed by Url: %w", err)
+	}
+
+	// Delete the follow record
+	err = s.db.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("could not unfollow feed: %w", err)
+	}
+
+	fmt.Printf("User %s has unfollowed \n", user.Name)
+	fmt.Printf("* %s\n", feed.Name)
 	return nil
 }

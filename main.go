@@ -52,11 +52,11 @@ func main() {
 	cmdManager.register("reset", handlerReset)
 	cmdManager.register("users", handlerUsers)
 	cmdManager.register("agg", handlerAgg)
-	cmdManager.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	cmdManager.register("feeds", handlerFeeds)
+	cmdManager.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	cmdManager.register("follow", middlewareLoggedIn(handlerFollow))
 	cmdManager.register("following", middlewareLoggedIn(handlerFollowing))
-
+	cmdManager.register("unfollow", middlewareLoggedIn(handlerUnFollow))
 	// Register other commands here later
 
 	// command-line arguments passes into a command struct
