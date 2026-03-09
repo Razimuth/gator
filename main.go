@@ -57,6 +57,8 @@ func main() {
 	cmdManager.register("follow", middlewareLoggedIn(handlerFollow))
 	cmdManager.register("following", middlewareLoggedIn(handlerFollowing))
 	cmdManager.register("unfollow", middlewareLoggedIn(handlerUnFollow))
+	cmdManager.register("browse", middlewareLoggedIn(handlerBrowse))
+
 	// Register other commands here later
 
 	// command-line arguments passes into a command struct

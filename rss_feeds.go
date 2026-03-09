@@ -3,11 +3,17 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"html"
 	"io"
 	"net/http"
+	"strings"
+	"time"
+
+	"github.com/Razimuth/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 type RSSFeed struct {
@@ -87,9 +93,37 @@ func scrapeFeeds(s *state) {
 		return
 	}
 
-	// Print titles
-	fmt.Printf("Fetched: %s - %d items\n", feed.Name, len(rssFeed.Channel.Item))
+	// Create posts
 	for _, item := range rssFeed.Channel.Item {
+		publishedAt := sql.NullTime{}
+		if t, err := time.Parse(time.RFC1123Z, item.PubDate); err == nil {
+			publishedAt = sql.NullTime{
+				Time:  t,
+				Valid: true,
+			}
+		}
+
+		_, err = s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			FeedID:    feed.ID,
+			Title:     item.Title,
+			Description: sql.NullString{
+				String: item.Description,
+				Valid:  true,
+			},
+			Url:         item.Link,
+			PublishedAt: publishedAt,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				continue
+			}
+			fmt.Printf("Couldn't create post: %v", err)
+			continue
+		}
 		fmt.Printf(" - %s\n", item.Title)
 	}
+	fmt.Printf("Fetched: %s - %d posts\n", feed.Name, len(rssFeed.Channel.Item))
 }

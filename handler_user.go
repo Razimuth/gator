@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/Razimuth/gator/internal/config"
@@ -90,15 +91,6 @@ func handlerUsers(s *state, cmd command) error {
 }
 
 func handlerAgg(s *state, cmd command) error {
-
-	//	url := "https://www.wagslane.dev/index.xml"
-	//	feed, err := fetchFeed(context.Background(), url)
-	//	if err != nil {
-	//		return fmt.Errorf("Error: %w", err)
-	//	}
-	// Print the entire feed struct
-	//	fmt.Printf("%+v\n", feed)
-
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("need <time_between_reqs>, 1m (Runs every minute).suggest > 1m")
 	}
@@ -118,11 +110,32 @@ func handlerAgg(s *state, cmd command) error {
 	}
 }
 
-// Print in a readable format
-//	fmt.Printf("Channel: %s\nDescription: %s\nItems:\n", feed.Channel.Title, feed.Channel.Description)
-//	for _, item := range feed.Channel.Item {
-//		fmt.Printf("- %s\n", item.Title)
-//		fmt.Printf("Description: %s\n", item.Description)
-//	}
-//	return nil
-//}
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	limit := 2
+	if len(cmd.Args) == 1 {
+		if specifiedLimit, err := strconv.Atoi(cmd.Args[0]); err == nil {
+			limit = specifiedLimit
+		} else {
+			return fmt.Errorf("invalid limit: %w", err)
+		}
+	}
+
+	posts, err := s.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit:  int32(limit),
+	})
+	if err != nil {
+		return fmt.Errorf("couldn't get posts for user: %w", err)
+	}
+
+	fmt.Printf("Found %d posts for user %s:\n", len(posts), user.Name)
+	for _, post := range posts {
+		fmt.Printf("- %s\n", post.Title)
+		fmt.Printf(" Link: %s\n", post.Url)
+		fmt.Printf(" from %s\n", post.FeedName)
+		fmt.Printf(" (Published: %s)\n", post.PublishedAt.Time.Format(time.RFC1123))
+		fmt.Printf(" Description: %+v\n", post.Description)
+		fmt.Println("=====================================")
+	}
+	return nil
+}
